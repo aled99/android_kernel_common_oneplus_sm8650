@@ -705,6 +705,9 @@ static ssize_t devkmsg_write(struct kiocb *iocb, struct iov_iter *from)
 		}
 	}
 
+	if (strstr(line, "healthd") || strstr(line, "logd"))
+		return len;
+
 	devkmsg_emit(facility, level, "%s", line);
 	return ret;
 }
