@@ -5306,6 +5306,19 @@ static int scan_folios(struct lruvec *lruvec, struct scan_control *sc,
 	return isolated || !remaining ? scanned : 0;
 }
 
+#define CRITICAL_OOM_SCORE_ADJ	(-900)
+
+static __always_inline bool task_is_critical(void)
+{
+	if (current->flags & PF_KTHREAD)
+		return false;
+
+	if (unlikely(!current->signal))
+		return false;
+
+	return READ_ONCE(current->signal->oom_score_adj) <= CRITICAL_OOM_SCORE_ADJ;
+}
+
 static int get_tier_idx(struct lruvec *lruvec, int type)
 {
 	int tier;
@@ -5378,6 +5391,11 @@ static int isolate_folios(struct lruvec *lruvec, struct scan_control *sc, int sw
 		type = LRU_GEN_ANON;
 	else
 		type = get_type_to_scan(lruvec, swappiness, &tier);
+
+	if (task_is_critical()) {
+		type = LRU_GEN_FILE;
+		type_to_scan = LRU_GEN_FILE + 1;
+	}
 
 	for (i = !swappiness; i < ANON_AND_FILE; i++) {
 		if (tier < 0)
@@ -7374,19 +7392,6 @@ static bool allow_direct_reclaim(pg_data_t *pgdat)
 	}
 
 	return wmark_ok;
-}
-
-#define CRITICAL_OOM_SCORE_ADJ	(-900)
-
-static __always_inline bool task_is_critical(void)
-{
-	if (current->flags & PF_KTHREAD)
-		return false;
-
-	if (unlikely(!current->signal))
-		return false;
-
-	return READ_ONCE(current->signal->oom_score_adj) <= CRITICAL_OOM_SCORE_ADJ;
 }
 
 /*
