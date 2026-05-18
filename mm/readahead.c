@@ -133,6 +133,19 @@
 
 #include "internal.h"
 
+#define CRITICAL_OOM_SCORE_ADJ	(-900)
+
+static __always_inline bool task_is_critical(void)
+{
+	if (current->flags & PF_KTHREAD)
+		return false;
+
+	if (unlikely(!current->signal))
+		return false;
+
+	return READ_ONCE(current->signal->oom_score_adj) <= CRITICAL_OOM_SCORE_ADJ;
+}
+
 /*
  * Initialise a struct file's readahead state.  Assumes that the caller has
  * memset *ra to zero.
@@ -523,6 +536,9 @@ void page_cache_ra_order(struct readahead_control *ractl,
 	if (!mapping_large_folio_support(mapping) || ra->size < 4)
 		goto fallback;
 
+	if (task_is_critical())
+		goto fallback;
+ 
 	limit = min(limit, index + ra->size - 1);
 
 	if (new_order < MAX_PAGECACHE_ORDER) {
