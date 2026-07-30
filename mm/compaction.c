@@ -2189,12 +2189,6 @@ static enum compact_result __compact_finished(struct compact_control *cc)
 		goto out;
 	}
 
-    trace_android_vh_compact_bypass(cc, &bypass);
-	if (!bypass && task_is_critical())
-		bypass = true;
-	if (bypass)
-		return COMPACT_SUCCESS;
-
 	if (is_via_compact_memory(cc->order))
 		return COMPACT_CONTINUE;
 
