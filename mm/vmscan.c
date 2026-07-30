@@ -5376,6 +5376,7 @@ static int isolate_folios(struct lruvec *lruvec, struct scan_control *sc, int sw
 	int type;
 	int scanned;
 	int tier = -1;
+	int type_to_scan = ANON_AND_FILE;
 	DEFINE_MIN_SEQ(lruvec);
 
 	/*
