@@ -2173,6 +2173,7 @@ static enum compact_result __compact_finished(struct compact_control *cc)
 	if (cc->proactive_compaction) {
 		int score, wmark_low;
 		pg_data_t *pgdat;
+		bool bypass = false;
 
 		pgdat = cc->zone->zone_pgdat;
 		if (kswapd_is_running(pgdat))
