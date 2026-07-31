@@ -112,7 +112,7 @@ static int try_to_freeze_tasks(bool user_only)
 
 		trace_android_vh_try_to_freeze_todo(todo, elapsed_msecs, wq_busy);
 	} else {
-		pr_debug(Freezing %s completed (elapsed %d.%03d seconds)\n",
+		pr_debug("Freezing %s completed (elapsed %d.%03d seconds)\n",
 			what, elapsed_msecs / 1000, elapsed_msecs % 1000);
 	}
 
