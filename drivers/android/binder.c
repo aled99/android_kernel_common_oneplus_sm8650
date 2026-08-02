@@ -77,20 +77,6 @@
 #include "binder_internal.h"
 #include "binder_trace.h"
 #include <trace/hooks/binder.h>
-#include "../../kernel/sched/sched.h"
-
-#define CRITICAL_OOM_SCORE_ADJ	(-900)
-
-static __always_inline bool task_is_critical(void)
-{
-	if (current->flags & PF_KTHREAD)
-		return false;
-
-	if (unlikely(!current->signal))
-		return false;
-
-	return READ_ONCE(current->signal->oom_score_adj) <= CRITICAL_OOM_SCORE_ADJ;
-}
 
 static HLIST_HEAD(binder_deferred_list);
 static DEFINE_MUTEX(binder_deferred_lock);
@@ -865,8 +851,7 @@ static void binder_transaction_priority(struct binder_thread *thread,
 	if (skip)
 		return;
 
-	if (!task_is_critical() &&
-	    !node->inherit_rt && is_rt_policy(desired.sched_policy)) {
+	if (!node->inherit_rt && is_rt_policy(desired.sched_policy)) {
 		desired.prio = NICE_TO_PRIO(0);
 		desired.sched_policy = SCHED_NORMAL;
 	}
@@ -903,10 +888,7 @@ static void binder_transaction_priority(struct binder_thread *thread,
 	}
 	spin_unlock(&thread->prio_lock);
 
-	if (task_is_critical())
-		binder_do_set_priority(thread, &desired, false);
-	else
-		binder_set_priority(thread, &desired);
+	binder_set_priority(thread, &desired);
 	trace_android_vh_binder_set_priority(t, task);
 }
 
